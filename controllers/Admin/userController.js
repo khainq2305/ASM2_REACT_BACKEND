@@ -1,9 +1,8 @@
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const { Op } = require('sequelize');
-const User = require('../../models/Admin/userModel'); 
-const upload = require('../../middlewares/upload');
-
+const User = require('../../models/admin/userModel');
+const upload = require('../../middlewares/uploads');
 
 module.exports = {
   async list(req, res) {
@@ -13,6 +12,7 @@ module.exports = {
       const offset = (parseInt(page) - 1) * parseInt(limit);
       const whereCondition = {};
   
+      // Tìm kiếm theo tên hoặc email
       if (search) {
         whereCondition[Op.or] = [
           { name: { [Op.like]: `%${search}%` } },
@@ -20,23 +20,33 @@ module.exports = {
         ];
       }
   
+      // Lọc trạng thái
       if (status !== undefined && status !== '') {
         whereCondition.status = parseInt(status);
       }
   
-      if (role && role !== 'all') {
-        whereCondition.role = role;
+      // Lọc vai trò
+      if (role !== undefined && role !== '') {
+        whereCondition.role = parseInt(role);
       }
   
+      // Lọc giới tính
       if (typeof gender === 'string' && gender !== '') {
         whereCondition.gender = gender;
       }
   
-      const { rows: users, count: total } = await User.findAndCountAll({
+      const { rows, count: total } = await User.findAndCountAll({
         where: whereCondition,
         offset,
         limit: parseInt(limit),
         order: [['createdAt', 'DESC']],
+      });
+  
+      const domain = process.env.DOMAIN || 'http://localhost:3000';
+  
+      const users = rows.map(user => {
+        const userObj = user.toJSON();
+        return userObj;
       });
   
       res.json({
@@ -53,33 +63,54 @@ module.exports = {
     }
   },
   
-  
-  
 
   async postAdd(req, res) {
     try {
       const { name, email, password, role, status, gender, phone, dob } = req.body;
   
       const errors = {};
-      if (!name) errors.name = 'Họ tên không được bỏ trống';
-      if (!email) errors.email = 'Email không được bỏ trống';
-      if (email && !/^\S+@\S+\.\S+$/.test(email)) errors.email = 'Email không hợp lệ';
-      if (!password || password.length < 6) errors.password = 'Mật khẩu phải từ 6 ký tự';
-      if (!phone || !/^[0-9]{10,12}$/.test(phone)) errors.phone = 'Số điện thoại không hợp lệ';
+  
+      if (!name?.trim()) errors.name = 'Họ tên không được bỏ trống';
+      if (!email?.trim()) errors.email = 'Email không được bỏ trống';
+      else if (!/^\S+@\S+\.\S+$/.test(email)) errors.email = 'Email không hợp lệ';
+  
+      if (!password) errors.password = 'Mật khẩu không được bỏ trống';
+      else if (password.length < 6) errors.password = 'Mật khẩu phải từ 6 ký tự trở lên';
+  
+      if (!phone?.trim()) errors.phone = 'Số điện thoại không được bỏ trống';
+      else if (!/^[0-9]{10,12}$/.test(phone)) errors.phone = 'Số điện thoại không hợp lệ';
+  
       if (!gender) errors.gender = 'Giới tính là bắt buộc';
-      if (!dob) errors.dob = 'Ngày sinh không được bỏ trống';
+  
+      if (!dob) {
+        errors.dob = 'Ngày sinh là bắt buộc';
+      } else {
+        const dobDate = new Date(dob);
+        const today = new Date();
+        const minAge = 10;
+        const age = today.getFullYear() - dobDate.getFullYear();
+        const m = today.getMonth() - dobDate.getMonth();
+  
+        if (dobDate > today) {
+          errors.dob = 'Ngày sinh không được lớn hơn ngày hiện tại';
+        } else if (age < minAge || (age === minAge && m < 0)) {
+          errors.dob = `Người dùng phải lớn hơn ${minAge} tuổi`;
+        }
+      }
+  
+      if (!role && role !== 0) errors.role = 'Vai trò không được bỏ trống';
+      if (status === undefined || status === '') errors.status = 'Trạng thái là bắt buộc';
   
       const existingUser = await User.findOne({ where: { email } });
-      if (existingUser) {
-        errors.email = 'Email đã tồn tại';
-      }
+      if (existingUser) errors.email = 'Email đã tồn tại trong hệ thống';
   
       if (Object.keys(errors).length > 0) {
         return res.status(400).json({ success: false, errors });
       }
   
       const hashedPassword = await bcrypt.hash(password, 10);
-      const avatar = req.file ? `/uploads/${req.file.filename}` : null;
+      const avatar = req.file ? req.file.filename : null;
+
   
       const newUser = await User.create({
         name,
@@ -88,19 +119,26 @@ module.exports = {
         role,
         gender,
         phone,
-        status: parseInt(status) || 1,
+        status: parseInt(status),
         dob,
-        avatar
+        avatar,
       });
   
-      res.json({ success: true, message: 'Thêm người dùng thành công', data: newUser });
+      const userResponse = newUser.toJSON();
+      delete userResponse.password;
+  
+      return res.status(201).json({
+        success: true,
+        message: 'Thêm người dùng thành công',
+        data: userResponse,
+      });
   
     } catch (err) {
-      console.error("❌ Lỗi khi thêm user:", err.message, err);
-      res.status(500).json({ success: false, message: 'Lỗi server' });
+      console.error("❌ Lỗi khi thêm user:", err);
+      return res.status(500).json({ success: false, message: 'Lỗi server nội bộ' });
     }
-  },
-  
+  }
+,  
 
   async postEdit(req, res) {
     try {
@@ -146,22 +184,22 @@ module.exports = {
     }
   },
 
-async toggleStatus(req, res) {
+  async toggleStatus(req, res) {
     try {
       const { id } = req.params;
-      const { status } = req.body; 
-  
+      const { status } = req.body;
+
       const user = await User.findByPk(id);
       if (!user) {
         return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
       }
-  
+
       if (status !== undefined) {
         user.status = parseInt(status);
       } else {
         user.status = user.status === 1 ? 0 : 1;
       }
-  
+
       await user.save();
       res.json({ success: true, message: 'Cập nhật trạng thái thành công', data: user });
     } catch (err) {
@@ -169,23 +207,21 @@ async toggleStatus(req, res) {
       res.status(500).json({ success: false, message: 'Lỗi server' });
     }
   },
-  
 
   async resetPassword(req, res) {
     try {
       const { id } = req.params;
-  
+
       const user = await User.findByPk(id);
       if (!user) {
         return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
       }
-  
+
       const newPassword = '12345678';
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       user.password = hashedPassword;
       await user.save();
-  
-      // Gửi mail
+
       await transporter.sendMail({
         from: process.env.MAIL_USER,
         to: user.email,
@@ -196,12 +232,11 @@ async toggleStatus(req, res) {
           <p>Vui lòng đăng nhập và thay đổi mật khẩu.</p>
         `,
       });
-  
+
       res.json({ success: true, message: 'Cấp lại mật khẩu và gửi email thành công' });
     } catch (err) {
       console.error('❌ Lỗi khi gửi mail:', err);
       res.status(500).json({ success: false, message: 'Lỗi server', error: err.message });
     }
   }
-  
 };

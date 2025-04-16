@@ -19,4 +19,10 @@ router.get('/:id', ProductController.getById);
 router.use('/cart', cartRoutes);
 // ✅ Route đơn hàng
 router.use('/orders', orderRoutes); // 👈 GẮN VÀO
+
+
+router.use('/categories', categoryRoutes);
+
+
+
 module.exports = router;
