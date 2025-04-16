@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const app = express();
-const port = 3000;
+const port = 3001;
 
 // Đổi thành thư mục admin chuẩn
 const adminRoutes = require('./routes/Admin');
@@ -13,10 +13,12 @@ app.use(express.json());
 
 // Cấu hình CORS
 app.use(cors({
-  origin: 'http://localhost:4200', // cho phép Angular gọi
+  origin: 'http://localhost:5173', // ✅ CHỈ CHO REACT
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
+
 
 // Đọc FormData (khi gửi ảnh, file, v.v.)
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));

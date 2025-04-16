@@ -29,7 +29,6 @@ const Product = sequelize.define('Product', {
     type: DataTypes.DECIMAL(10, 2),
     defaultValue: 0
   },
-  finalPrice: DataTypes.DECIMAL(10, 2),
   deletedAt: DataTypes.DATE
 }, {
   tableName: 'products',

@@ -33,4 +33,5 @@ const Category = connection.define('Category', {
     paranoid: true // Nếu bạn muốn Sequelize tự xử lý deletedAt khi xóa mềm
 });
 
+  
 module.exports = Category;
