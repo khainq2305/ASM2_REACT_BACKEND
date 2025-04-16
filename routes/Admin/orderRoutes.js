@@ -14,7 +14,6 @@ router.put('/orders/:id/cancel', OrderController.cancel);
 
 // ✅ Cập nhật trạng thái đơn hàng
 router.put('/orders/:id/update-status', OrderController.updateStatus);
-// Lấy form chỉnh sửa (giao diện web)
-router.get('/orders/:id/edit', OrderController.getEditForm);
+
 
 module.exports = router;

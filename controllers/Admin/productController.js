@@ -66,16 +66,19 @@ static async get(req, res) {
         {
           model: Category,
           as: "category",
-          attributes: ["id", "name"], // giới hạn tránh dư thừa
+          attributes: ["id", "name"],
+          where: { status: 1 },     // ✅ LỌC category có status = 1
+          required: true            // ✅ CHỈ LẤY product có category hợp lệ
         },
       ],
+      
       attributes: [
         'id',
         'name',
         'description',
         'price',
         'discount',
-        'finalPrice',  // Trả về trường finalPrice
+     
         'status',
         'quantity',
         'idCategory',
@@ -94,6 +97,8 @@ static async get(req, res) {
       totalPages: Math.ceil(count / limit),
     });
   } catch (err) {
+    console.log("🔥 Lỗi khi get sản phẩm:", err);
+
     res.status(500).json({ message: "Lỗi server", error: err.message });
   }
 }
@@ -229,17 +234,24 @@ static async get(req, res) {
   static async delete(req, res) {
     try {
       const { id } = req.params;
+      console.log("🔥 Đang xoá sản phẩm ID:", id); // ✅ THÊM LOG
+  
       const product = await Product.findByPk(id);
       if (!product) {
+        console.log("⚠️ Không tìm thấy sản phẩm");
         return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
       }
-
+  
       await product.destroy();
-      res.status(200).json({ message: "Xóa thành công" });
+      console.log("✅ Đã xoá thành công");
+  
+      res.status(200).json({ message: "Xoá thành công" });
     } catch (err) {
-      res.status(500).json({ message: "Xóa thất bại", error: err.message });
+      console.error("❌ Lỗi xoá sản phẩm:", err);
+      res.status(500).json({ message: "Xoá thất bại", error: err.message });
     }
   }
+  
 // ✅ Xóa nhiều sản phẩm (soft delete)
 static async deleteMultiple(req, res) {
   try {

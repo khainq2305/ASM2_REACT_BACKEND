@@ -4,7 +4,7 @@ const sequelize = require("../../database");
 const Order = sequelize.define(
   "Order",
   {
-    idOrder: {
+    id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
@@ -37,9 +37,10 @@ const Order = sequelize.define(
       allowNull: false,
     },
     cancel_reason: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT, // ✅ đổi từ STRING sang TEXT cho đúng với DB
       allowNull: true,
     },
+    
     name: {
       type: DataTypes.STRING,
       allowNull: false,

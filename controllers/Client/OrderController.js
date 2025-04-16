@@ -1,8 +1,11 @@
-const Cart = require('../../models/Client/CartModel');
+
 const Order = require('../../models/Client/OrderModel');
 const OrderDetail = require('../../models/Client/OrderDetailModel');
 const Product = require('../../models/Admin/productModel');
+const Cart = require('../../models/Client/CartModel');
+const { Op } = require('sequelize');
 
+const CheckoutAddress = require('../../models/Client/checkoutAddressModel');
 class OrderController {
   // ✅ POST /orders/create
   static async createOrder(req, res) {
@@ -58,8 +61,22 @@ class OrderController {
         });
       }
 
-      // 4. Xóa giỏ hàng của người dùng sau khi đặt hàng
-      await Cart.destroy({ where: { idUser } });
+     // ✅ Lọc ra các productId đã đặt
+const selectedProductIds = cartItems.map(item => item.productId || item.product_id);
+
+// ✅ Chỉ xoá các item đã thanh toán
+await Cart.destroy({
+  where: {
+    idUser: userId,
+    product_id: {
+      [Op.in]: selectedProductIds
+    }
+  }
+});
+
+      
+
+console.log('🧹 Xoá giỏ hàng với product_id IN:', cartItems.map(item => item.productId));
 
       // 5. Trả về kết quả
       res.status(201).json({
@@ -73,6 +90,7 @@ class OrderController {
   }
   static async getOrdersByUser(req, res) {
     try {
+      console.log('👉 req.user =', req.user); // 👈 thêm log này
       const idUser = req.user.id;
   
       const orders = await Order.findAll({
@@ -85,7 +103,7 @@ class OrderController {
               {
                 model: Product,
                 as: 'product',
-                attributes: ['name', 'image', 'finalPrice']
+                attributes: ['name', 'image']
               }
             ]
           }
@@ -97,6 +115,70 @@ class OrderController {
     } catch (error) {
       console.error("❌ Lỗi khi lấy danh sách đơn hàng:", error);
       res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+  }
+  static async placeOrder(req, res) {
+    const { cartItems, totalPrice, paymentMethod, shippingMethod, shippingFee, address } = req.body;
+    const userId = req.user.id;
+    
+  
+    try {
+      const addressData = await CheckoutAddress.create({
+        idUser: userId,
+        province_name: address.provinceId,
+        district_name: address.districtId,
+        ward_name: address.wardCode,
+        address_detail: address.address_detail, // ✅ thêm dòng này
+        phone: address.phone                    // ✅ thêm dòng này
+      });
+      
+  
+      const order = await Order.create({
+        idUser: userId,
+        checkout_address_id: addressData.id,
+        name: address.name,          // ✅ thêm dòng này
+        phone: address.phone,        // ✅ thêm dòng này
+        total_price: totalPrice,
+        payment_method: paymentMethod,
+        payment_status: 'pending',
+        shipping_method: shippingMethod,
+        status: 0
+      });
+      
+  
+      for (let item of cartItems) {
+        await OrderDetail.create({
+          idOrder: order.id,
+          idProduct: item.productId,
+          quantity: item.quantity,
+          price: item.price
+        });
+      
+        // 👇 Trừ số lượng tồn kho
+        const product = await Product.findByPk(item.productId);
+        if (product) {
+          product.quantity = Math.max(product.quantity - item.quantity, 0); // tránh âm
+          await product.save();
+        }
+      }
+      
+      
+      // ✅ CHỈ XOÁ NHỮNG SẢN PHẨM ĐÃ ĐẶT
+      const selectedProductIds = cartItems.map(item => item.productId || item.product_id);
+      
+      await Cart.destroy({
+        where: {
+          idUser: userId,
+          product_id: {
+            [Op.in]: selectedProductIds
+          }
+        }
+      });
+      
+      return res.status(201).json({ message: 'Đặt hàng thành công', orderId: order.idOrder });
+    } catch (error) {
+      console.error('❌ Lỗi tạo đơn hàng:', error);
+      return res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng' });
     }
   }
   

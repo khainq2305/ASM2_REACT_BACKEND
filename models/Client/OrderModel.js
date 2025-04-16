@@ -26,7 +26,7 @@ const Order = sequelize.define('Order', {
   },
 }, {
   tableName: 'orders',
-  timestamps: true
+  timestamps: true,
 });
 
 module.exports = Order;
