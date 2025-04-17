@@ -1,6 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../database");
-const Product = require("./ProductModel"); // ✅ import đúng đường dẫn
+const Product = require("./productModel");
 const Cart = sequelize.define("Cart", {
   idUser: {
     type: DataTypes.INTEGER,
@@ -20,6 +20,6 @@ const Cart = sequelize.define("Cart", {
 });
 Cart.belongsTo(Product, {
     foreignKey: 'product_id',
-    as: 'product' // 👈 tên alias trùng với chỗ include ở trên
+    as: 'product' 
   });
 module.exports = Cart;

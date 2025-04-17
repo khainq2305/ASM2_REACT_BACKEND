@@ -1,5 +1,5 @@
-const Product = require("../../models/Admin/productModel");
-const Category = require("../../models/Admin/categoryModel");
+const { AdminProduct: Product, AdminCategory: Category } = require("../../models");
+
 const { Op } = require("sequelize");
 
 class ProductController {
@@ -78,13 +78,14 @@ static async get(req, res) {
         'description',
         'price',
         'discount',
-     
         'status',
         'quantity',
         'idCategory',
         'createdAt',
-        'deletedAt'
+        'deletedAt',
+        'image' // ✅ THÊM DÒNG NÀY
       ],
+      
       paranoid: !includeDeleted,
     });
     

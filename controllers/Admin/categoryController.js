@@ -4,17 +4,25 @@ class CategoryController {
 
     static async get(req, res) {
         try {
-            const categories = await CategoryModel.findAll();
-            res.status(200).json({
-                "status": 200,
-                "message": "Lấy danh sách thành công",
-                "data": categories
-            });
+          const { status } = req.query; // 💥 lấy param
+          const where = {};
+      
+          if (status !== undefined) {
+            where.status = parseInt(status); // ✅ ép kiểu rõ ràng
+          }
+      
+          const categories = await CategoryModel.findAll({ where });
+      
+          res.status(200).json({
+            status: 200,
+            message: "Lấy danh sách thành công",
+            data: categories,
+          });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+          res.status(500).json({ error: error.message });
         }
-    }
-
+      }
+      
     static async getById(req, res) {
         try {
             const { id } = req.params;

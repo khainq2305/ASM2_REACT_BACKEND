@@ -1,35 +1,42 @@
 const Cart = require("../../models/Client/CartModel");
-const User = require('../../models/Client/UserModel'); // ✅ thêm dòng này để fix lỗi
-const Product = require('../../models/Client/ProductModel'); // ✅ import model Product
+const User = require('../../models/Client/userModel'); // ✅ thêm dòng này để fix lỗi
+const Product = require('../../models/Client/productModel'); // ✅ import model Product
 
 class CartController {
-    static async addToCart(req, res) {
-        try {
-          const {product_id, quantity } = req.body;
-          const idUser = req.user.id; // ✅ Lấy từ token
-          console.log("📥 Body:", req.body); // ✅ THÊM LOG
-          if (!idUser || !product_id || !quantity) {
-            return res.status(400).json({ message: 'Thiếu thông tin' });
-          }
-          const user = await User.findByPk(idUser); // ✅ thay vì req.body.idUser
-
-          if (!user) {
-            return res.status(400).json({ message: "Người dùng không tồn tại!" });
-          }
-          
-          // Gọi model Cart để tạo bản ghi
-          const newCart = await Cart.create({
-            idUser,
-            product_id,
-            quantity
-          });
-    
-          res.status(201).json({ message: 'Thêm vào giỏ hàng thành công', data: newCart });
-        } catch (error) {
-          console.error('❌ Lỗi thêm vào giỏ hàng:', error);
-          res.status(500).json({ message: 'Lỗi server', error: error.message });
-        }
+  static async addToCart(req, res) {
+    try {
+      const { product_id, quantity } = req.body;
+      const idUser = req.user.id;
+  
+      if (!idUser || !product_id || !quantity) {
+        return res.status(400).json({ message: 'Thiếu thông tin' });
       }
+  
+      const user = await User.findByPk(idUser);
+      if (!user) {
+        return res.status(400).json({ message: "Người dùng không tồn tại!" });
+      }
+  
+      // 🔍 Kiểm tra xem đã có sản phẩm này trong giỏ chưa
+      let existing = await Cart.findOne({ where: { idUser, product_id } });
+  
+      if (existing) {
+        // ✅ Nếu có rồi thì cộng dồn số lượng
+        existing.quantity += quantity;
+        await existing.save();
+        return res.status(200).json({ message: 'Cập nhật số lượng giỏ hàng', data: existing });
+      }
+  
+      // ❌ Nếu chưa có thì thêm mới
+      const newCart = await Cart.create({ idUser, product_id, quantity });
+      return res.status(201).json({ message: 'Thêm vào giỏ hàng thành công', data: newCart });
+  
+    } catch (error) {
+      console.error('❌ Lỗi thêm vào giỏ hàng:', error);
+      res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+  }
+  
 
      
       static async getCartByUser(req, res) {
@@ -41,7 +48,7 @@ class CartController {
               {
                 model: Product,
                 as: 'product', // 👈 nếu bạn định nghĩa alias khi `Cart.belongsTo(Product, { ... })`
-                attributes: ['id', 'name', 'image', 'price', 'discount']
+                attributes: ['id', 'name', 'image', 'price', 'discount', 'quantity']
               }
             ]
           });

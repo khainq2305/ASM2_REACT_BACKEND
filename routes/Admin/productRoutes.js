@@ -1,53 +1,42 @@
+// routes/admin/product.routes.js
 const express = require('express');
 const router = express.Router();
 const ProductController = require('../../controllers/Admin/productController');
 const upload = require('../../middlewares/uploads');
 
-// Lấy danh sách sản phẩm (có filter, phân trang, status, category, deleted, sort)
+// GET - danh sách sản phẩm
 router.get('/products/list', ProductController.get);
-router.delete('/products/delete/:id', ProductController.delete); // ✅ SỬA lại đường dẫn
 
-// Lấy chi tiết 1 sản phẩm theo ID
-router.get('/products/:id', ProductController.getById);
-
-// Thêm mới sản phẩm (upload ảnh thumbnail)
+// POST - tạo mới
 router.post(
   '/products/add',
-  upload.fields([
-    { name: 'image', maxCount: 1 }, // tên field ở formData
-  ]),
+  upload.fields([{ name: 'image', maxCount: 1 }]),
   ProductController.create
 );
 
-// Cập nhật sản phẩm (thumbnail + media)
+// PUT - cập nhật
 router.put(
   '/products/:id',
-  upload.fields([
-    { name: 'thumbnail', maxCount: 1 },
-    { name: 'media', maxCount: 10 }
-  ]),
+  upload.fields([{ name: 'image', maxCount: 1 }]),
   ProductController.update
 );
 
-// XÓA MỀM NHIỀU sản phẩm
+// DELETE - xóa mềm nhiều
 router.delete('/products/delete-multiple', ProductController.deleteMultiple);
 
-// XÓA VĨNH VIỄN NHIỀU sản phẩm
+// DELETE - xóa vĩnh viễn nhiều
 router.delete('/products/permanent-delete-multiple', ProductController.forceDeleteMultiple);
 
-// XÓA VĨNH VIỄN 1 sản phẩm
+// DELETE - xóa vĩnh viễn 1
 router.delete('/products/permanent/:id', ProductController.forceDelete);
 
-// ✅ XÓA MỀM 1 sản phẩm (phải đặt SAU các route cụ thể)
-
-
-// Lấy danh sách sản phẩm đã xoá
-router.get('/products/trash/list', ProductController.trash);
-
-// Khôi phục 1 sản phẩm
+// PATCH - khôi phục 1
 router.patch('/products/restore/:id', ProductController.restore);
 
-// Khôi phục nhiều sản phẩm
+// PATCH - khôi phục nhiều
 router.patch('/products/restore-multiple', ProductController.restoreMultiple);
+
+// ⚠️ NÊN ĐẶT Ở CUỐI: DELETE - xóa mềm 1 sản phẩm
+router.delete('/products/delete/:id', ProductController.delete);
 
 module.exports = router;

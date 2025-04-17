@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const categoryRoutes = require('./categoryRoutes');
+
 
 const authRoutes = require('./authRoutes');
 const ProductController = require('../../controllers/Client/ProductController');
@@ -13,7 +15,7 @@ router.use('/', authRoutes);
 router.use('/', productRoutes); // ✅ GẮN ROUTE SẢN PHẨM
 router.use('/ghn', ghnRoutes); // ✅ GẮN VÀO
 // Route sản phẩm cho client
-router.get('/:id', ProductController.getById);
+// router.get('/:id', ProductController.getById);
 
 // ✅ Gắn route giỏ hàng
 router.use('/cart', cartRoutes);
