@@ -13,6 +13,12 @@ const User = sequelize.define('User', {
         allowNull: false,
         unique: true
     },
+    googleId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true,
+        field: "googleId", // khớp với tên cột trong DB
+      },
     password: {
         type: DataTypes.STRING,
         allowNull: false

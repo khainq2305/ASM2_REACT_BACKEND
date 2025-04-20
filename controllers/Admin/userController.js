@@ -1,7 +1,7 @@
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const { Op } = require('sequelize');
-const User = require('../../models/admin/userModel');
+const User = require('../../models/Admin/userModel');
 const upload = require('../../middlewares/uploads');
 
 module.exports = {
@@ -135,7 +135,11 @@ module.exports = {
   
     } catch (err) {
       console.error("❌ Lỗi khi thêm user:", err);
-      return res.status(500).json({ success: false, message: 'Lỗi server nội bộ' });
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Lỗi server nội bộ',
+        error: err.message // ✅ thêm để dễ debug
+      });
     }
   }
 ,  
@@ -187,26 +191,31 @@ module.exports = {
   async toggleStatus(req, res) {
     try {
       const { id } = req.params;
-      const { status } = req.body;
-
+      const { status, reason } = req.body;
+  
       const user = await User.findByPk(id);
       if (!user) {
         return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
       }
-
+  
       if (status !== undefined) {
         user.status = parseInt(status);
-      } else {
-        user.status = user.status === 1 ? 0 : 1;
       }
-
+  
+      if (status === 0 && reason) {
+        user.reason = reason;
+      } else if (status === 1) {
+        user.reason = null; // Xóa lý do khi active
+      }
+  
       await user.save();
       res.json({ success: true, message: 'Cập nhật trạng thái thành công', data: user });
     } catch (err) {
-      console.error(err);
+      console.error('❌ Lỗi cập nhật trạng thái:', err);
       res.status(500).json({ success: false, message: 'Lỗi server' });
     }
-  },
+  }
+,  
 
   async resetPassword(req, res) {
     try {

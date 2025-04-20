@@ -205,9 +205,9 @@ static async get(req, res) {
       data.is_feature = parseInt(data.is_feature) || 0;
   
       // Xử lý hình ảnh mới
-      if (req.files?.thumbnail?.[0]) {
-        data.image = req.files.thumbnail[0].filename;
-      }
+      if (req.files?.image?.[0]) {
+       data.image = req.files.image[0].filename;
+         }
   
       // Xử lý danh mục
       if (!Array.isArray(data.categories)) {

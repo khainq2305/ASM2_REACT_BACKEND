@@ -96,13 +96,13 @@ class ClientProductController {
   static async search(req, res) {
     try {
       const keyword = req.query.keyword || "";
-      const normalizedKeyword = removeAccents(keyword.toLowerCase());
+     
   
       const products = await Product.findAll({
         where: {
           status: 1,
           name: {
-            [Op.like]: `%${keyword}%`, // Nếu bạn dùng remove-accents cho name, hãy normalize ở DB hoặc tạo thêm column không dấu
+            [Op.like]: `%${keyword}%`,
           },
         },
         order: [["createdAt", "DESC"]],

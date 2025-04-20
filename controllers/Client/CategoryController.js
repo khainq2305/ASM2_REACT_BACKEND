@@ -4,7 +4,7 @@ class CategoryController {
   static async getAll(req, res) {
     try {
       const categories = await Category.findAll({
-        where: { status: true } 
+        where: { status: 1 } 
       });
 
       res.status(200).json(categories);

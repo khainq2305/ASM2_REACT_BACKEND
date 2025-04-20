@@ -6,6 +6,7 @@ const upload = require('../../middlewares/uploads');
 
 // GET - danh sách sản phẩm
 router.get('/products/list', ProductController.get);
+// ⚠️ NÊN ĐẶT Ở CUỐI: DELETE - xóa mềm 1 sản phẩm
 
 // POST - tạo mới
 router.post(
@@ -36,7 +37,6 @@ router.patch('/products/restore/:id', ProductController.restore);
 // PATCH - khôi phục nhiều
 router.patch('/products/restore-multiple', ProductController.restoreMultiple);
 
-// ⚠️ NÊN ĐẶT Ở CUỐI: DELETE - xóa mềm 1 sản phẩm
 router.delete('/products/delete/:id', ProductController.delete);
 
 module.exports = router;
