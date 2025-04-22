@@ -8,4 +8,5 @@ router.delete('/:id', commentController.delete);
 router.patch('/:id/spam', commentController.markSpam); 
 router.get('/summary', commentController.getCommentSummary);
 router.get('/product/:id', commentController.getCommentByProduct);
+router.get('/',commentController.getCommentByProductAndUser)
 module.exports = router;

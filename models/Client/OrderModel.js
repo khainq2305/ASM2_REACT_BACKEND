@@ -24,6 +24,11 @@ const Order = sequelize.define('Order', {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
   },
+  status: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  }
+  
 }, {
   tableName: 'orders',
   timestamps: true,
